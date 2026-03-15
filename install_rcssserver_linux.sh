@@ -80,16 +80,22 @@ fi
 sudo ldconfig 2>/dev/null || true
 
 echo ""
-echo "=== 5. Сборка монитора (методичка: cd rcssmonitor, те же шаги) ==="
+echo "=== 5. Сборка монитора (опционально; при Qt5 возможна ошибка линковки) ==="
+MONITOR_OK=0
+set +e
 cd "$BUILD_DIR/rcssmonitor"
-./bootstrap
-./configure CXX="$CXX" CXXFLAGS="$CXXFLAGS"
-make -j$(nproc)
-sudo make install
+./bootstrap 2>/dev/null && ./configure CXX="$CXX" CXXFLAGS="$CXXFLAGS" && make -j$(nproc) && sudo make install && MONITOR_OK=1
+set -e
+if [[ $MONITOR_OK -ne 1 ]]; then
+  echo ""
+  echo "  [!] rcssmonitor не собрался (часто из‑за Qt5: undefined reference PlayerTypeDialog)."
+  echo "      Сервер установлен — можно запускать rcssserver и агентов без визуального монитора."
+  echo "      Либо соберите монитор вручную с Qt4 (если найдёте libqt4-dev) или попробуйте CMake в каталоге rcssmonitor."
+fi
 
 echo ""
-echo "=== Готово. Порядок запуска по методичке: ==="
+echo "=== Готово. Порядок запуска: ==="
 echo "  1. rcssserver"
-echo "  2. rcssmonitor"
-echo "  3. Программа агентов (например: cd lab1 && ./start.sh)"
-echo "  4. В мониторе: Kick off."
+[[ $MONITOR_OK -eq 1 ]] && echo "  2. rcssmonitor"
+echo "  N. Программа агентов: cd lab1 && ./start.sh"
+[[ $MONITOR_OK -eq 1 ]] && echo "  В мониторе: Kick off."
