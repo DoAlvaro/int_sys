@@ -14,12 +14,15 @@ if command -v apt-get &>/dev/null; then
     git curl
   # libfreetype: в новых дистрибутивах может быть libfreetype-dev вместо libfreetype6-dev
   sudo apt-get install -y libfreetype6-dev 2>/dev/null || sudo apt-get install -y libfreetype-dev
-  # Монитор: Qt4 на Ubuntu 22+ нет — ставим Qt5 (rcssmonitor поддерживает)
+  # Монитор по методичке — нужен Qt4. В Ubuntu 22+ его нет в репозиториях, подключаем PPA.
   if apt-cache show libqt4-dev &>/dev/null; then
-    sudo apt-get install -y libqt4-dev libaudio-dev
+    sudo apt-get install -y libqt4-dev libaudio-dev qt4-dev-tools
   else
-    echo "  Qt4 не найден, ставим Qt5 для rcssmonitor..."
-    sudo apt-get install -y qtbase5-dev libqt5opengl5-dev
+    echo "  Qt4 в репозиториях нет. Подключаем PPA для Qt4 (как в методичке)..."
+    sudo apt-get install -y software-properties-common
+    sudo add-apt-repository -y ppa:ubuntuhandbook1/ppa
+    sudo apt-get update
+    sudo apt-get install -y libqt4-dev libqtcore4 libqtgui4 qt4-dev-tools libaudio-dev
   fi
 else
   echo "Нужен apt-get (Debian/Ubuntu). Для Fedora: dnf install gcc-c++ automake boost-devel flex bison."
@@ -80,22 +83,17 @@ fi
 sudo ldconfig 2>/dev/null || true
 
 echo ""
-echo "=== 5. Сборка монитора (опционально; при Qt5 возможна ошибка линковки) ==="
-MONITOR_OK=0
-set +e
+echo "=== 5. Сборка монитора (методичка: bootstrap, configure, make, make install) ==="
 cd "$BUILD_DIR/rcssmonitor"
-./bootstrap 2>/dev/null && ./configure CXX="$CXX" CXXFLAGS="$CXXFLAGS" && make -j$(nproc) && sudo make install && MONITOR_OK=1
-set -e
-if [[ $MONITOR_OK -ne 1 ]]; then
-  echo ""
-  echo "  [!] rcssmonitor не собрался (часто из‑за Qt5: undefined reference PlayerTypeDialog)."
-  echo "      Сервер установлен — можно запускать rcssserver и агентов без визуального монитора."
-  echo "      Либо соберите монитор вручную с Qt4 (если найдёте libqt4-dev) или попробуйте CMake в каталоге rcssmonitor."
-fi
+make distclean 2>/dev/null || true
+./bootstrap
+./configure CXX="$CXX" CXXFLAGS="$CXXFLAGS"
+make -j$(nproc)
+sudo make install
 
 echo ""
-echo "=== Готово. Порядок запуска: ==="
+echo "=== Готово. Порядок запуска по методичке: ==="
 echo "  1. rcssserver"
-[[ $MONITOR_OK -eq 1 ]] && echo "  2. rcssmonitor"
-echo "  N. Программа агентов: cd lab1 && ./start.sh"
-[[ $MONITOR_OK -eq 1 ]] && echo "  В мониторе: Kick off."
+echo "  2. rcssmonitor"
+echo "  3. Программа агентов: cd lab1 && ./start.sh"
+echo "  4. В мониторе: Kick off."
