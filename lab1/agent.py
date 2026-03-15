@@ -1,7 +1,15 @@
 import time
 from msg import parse_msg, parse_all_msgs
 from flags import get_visible_flags, FLAGS
-from config import FIELD_WIDTH, FIELD_HEIGHT, FIELD_MARGIN
+from config import (
+    FIELD_WIDTH,
+    FIELD_HEIGHT,
+    FIELD_MARGIN,
+    MOVE_X_MIN,
+    MOVE_X_MAX,
+    MOVE_Y_MIN,
+    MOVE_Y_MAX,
+)
 from position import (
     position_from_three_flags,
     body_angle_from_flag,
@@ -153,7 +161,11 @@ class Agent:
 
     def run(self, start_pos, rotation_speed=0):
         self.connect()
-        self.move(*start_pos)
+        # Стартовая позиция — строго внутри поля (протокол: x in [-54,54], y in [-32,32])
+        x, y = start_pos
+        x = max(MOVE_X_MIN, min(MOVE_X_MAX, x))
+        y = max(MOVE_Y_MIN, min(MOVE_Y_MAX, y))
+        self.move(x, y)
         self.rotation_speed = rotation_speed
         self.running = True
         print(f"Команда: {self.team_name}, позиция: {start_pos}, вращение: {rotation_speed}")
