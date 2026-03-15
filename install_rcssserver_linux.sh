@@ -27,6 +27,35 @@ else
 fi
 
 echo ""
+echo "=== 1b. Компилятор с поддержкой C++17 ==="
+CXX_COMPILER=""
+for cxx in g++ g++-12 g++-11 g++-10 g++-9; do
+  if command -v "$cxx" &>/dev/null; then
+    if "$cxx" -std=c++17 -x c++ -c - -o /dev/null &>/dev/null <<< 'int main() { return 0; }'; then
+      CXX_COMPILER="$cxx"
+      break
+    fi
+  fi
+done
+if [[ -z "$CXX_COMPILER" ]]; then
+  echo "  Стандартный g++ не поддерживает C++17. Пробуем установить g++-10..."
+  sudo apt-get install -y g++-10 2>/dev/null || sudo apt-get install -y g++-9
+  for cxx in g++-10 g++-9 g++; do
+    if command -v "$cxx" &>/dev/null && "$cxx" -std=c++17 -x c++ -c - -o /dev/null &>/dev/null <<< 'int main() { return 0; }'; then
+      CXX_COMPILER="$cxx"
+      break
+    fi
+  done
+fi
+if [[ -z "$CXX_COMPILER" ]]; then
+  echo "Ошибка: не найден компилятор с поддержкой C++17. Установите g++-10 или новее: sudo apt install g++-10"
+  exit 1
+fi
+export CXX="$CXX_COMPILER"
+export CXXFLAGS="-std=c++17"
+echo "  Используем: $CXX $CXXFLAGS"
+
+echo ""
 echo "=== 2. Клонирование (методичка: git clone rcssserver, rcssmonitor) ==="
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
@@ -36,10 +65,10 @@ if [[ ! -d "rcssserver" ]]; then
 fi
 
 echo ""
-echo "=== 3. Сборка сервера (методичка: cd rcssserver, ./bootstrap, ./configure CXXFLAGS=-std=c++14, make, make install) ==="
+echo "=== 3. Сборка сервера (методичка: cd rcssserver, ./bootstrap, ./configure, make, make install) ==="
 cd "$BUILD_DIR/rcssserver"
 ./bootstrap
-./configure CXXFLAGS='-std=c++14'
+./configure CXX="$CXX" CXXFLAGS="$CXXFLAGS"
 make -j$(nproc)
 sudo make install
 
@@ -54,7 +83,7 @@ echo ""
 echo "=== 5. Сборка монитора (методичка: cd rcssmonitor, те же шаги) ==="
 cd "$BUILD_DIR/rcssmonitor"
 ./bootstrap
-./configure CXXFLAGS='-std=c++14'
+./configure CXX="$CXX" CXXFLAGS="$CXXFLAGS"
 make -j$(nproc)
 sudo make install
 
