@@ -2,11 +2,11 @@ import time
 from msg import parse_msg, parse_all_msgs
 from flags import get_visible_flags, FLAGS
 from config import (
-    FIELD_WIDTH,
-    FIELD_HEIGHT,
-    FIELD_MARGIN_X,
-    FIELD_MARGIN_Y,
-    EDGE_HALF_H,
+    FIELD_X_MIN,
+    FIELD_X_MAX,
+    FIELD_Y_MIN,
+    FIELD_Y_MAX,
+    FIELD_MARGIN,
     MOVE_X_MIN,
     MOVE_X_MAX,
     MOVE_Y_MIN,
@@ -148,13 +148,15 @@ class Agent:
                 self._process_see(parsed)
                 if not self.play_on:
                     continue
-                # У края поля — разворачиваемся (Y часто строже в симуляторе — используем EDGE_HALF_H)
-                half_w = FIELD_WIDTH / 2
+                # У края поля — разворачиваемся (поле: x in [-52,52], y in [-33,34])
                 at_edge = (
-                    self.x is not None and self.y is not None
+                    self.x is not None
+                    and self.y is not None
                     and (
-                        abs(self.x) > half_w - FIELD_MARGIN_X
-                        or abs(self.y) > EDGE_HALF_H - FIELD_MARGIN_Y
+                        self.x > FIELD_X_MAX - FIELD_MARGIN
+                        or self.x < FIELD_X_MIN + FIELD_MARGIN
+                        or self.y > FIELD_Y_MAX - FIELD_MARGIN
+                        or self.y < FIELD_Y_MIN + FIELD_MARGIN
                     )
                 )
                 if at_edge:

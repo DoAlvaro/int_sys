@@ -5,7 +5,7 @@
 """
 import math
 from flags import FLAGS
-from config import FIELD_WIDTH, FIELD_HEIGHT, EPS
+from config import FIELD_X_MIN, FIELD_X_MAX, FIELD_Y_MIN, FIELD_Y_MAX, EPS
 
 
 def _to_rad(deg):
@@ -13,8 +13,8 @@ def _to_rad(deg):
 
 
 def in_field(x, y):
-    """Проверка, что точка в границах поля."""
-    return -FIELD_WIDTH <= x <= FIELD_WIDTH and -FIELD_HEIGHT <= y <= FIELD_HEIGHT
+    """Проверка, что точка в границах поля (-52..52 по x, -33..34 по y)."""
+    return FIELD_X_MIN <= x <= FIELD_X_MAX and FIELD_Y_MIN <= y <= FIELD_Y_MAX
 
 
 def position_from_two_flags(x1, y1, d1, x2, y2, d2):
