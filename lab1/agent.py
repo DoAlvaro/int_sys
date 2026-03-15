@@ -1,6 +1,7 @@
 import time
 from msg import parse_msg, parse_all_msgs
 from flags import get_visible_flags, FLAGS
+from config import FIELD_WIDTH, FIELD_HEIGHT, FIELD_MARGIN
 from position import (
     position_from_three_flags,
     body_angle_from_flag,
@@ -135,10 +136,17 @@ class Agent:
                 self._process_init(parsed)
             elif cmd == "see":
                 self._process_see(parsed)
-                # Один body-команда за цикл. Чередуем: turn и dash — и крутимся, и бежим
                 if not self.play_on:
                     continue
-                if self.rotation_speed != 0 and self._see_count % 2 == 0:
+                # У края поля — разворачиваемся
+                half_w, half_h = FIELD_WIDTH / 2, FIELD_HEIGHT / 2
+                at_edge = (
+                    self.x is not None and self.y is not None
+                    and (abs(self.x) > half_w - FIELD_MARGIN or abs(self.y) > half_h - FIELD_MARGIN)
+                )
+                if at_edge:
+                    self.turn(180)
+                elif self.rotation_speed != 0 and self._see_count % 2 == 0:
                     self.turn(self.rotation_speed)
                 else:
                     self.dash(60)
