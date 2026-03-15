@@ -54,6 +54,10 @@ class Agent:
     def turn(self, moment):
         self.socket.send(f"(turn {moment})")
 
+    def dash(self, power):
+        """Бег в направлении взгляда. power обычно -100..100."""
+        self.socket.send(f"(dash {power})")
+
     def stop(self):
         self.running = False
         try:
@@ -131,9 +135,13 @@ class Agent:
                 self._process_init(parsed)
             elif cmd == "see":
                 self._process_see(parsed)
-                # Один turn за цикл, только когда игра идёт (или после авто-play_on)
-                if self.rotation_speed != 0 and self.play_on:
+                # Один body-команда за цикл. Чередуем: turn и dash — и крутимся, и бежим
+                if not self.play_on:
+                    continue
+                if self.rotation_speed != 0 and self._see_count % 2 == 0:
                     self.turn(self.rotation_speed)
+                else:
+                    self.dash(60)
 
     def run(self, start_pos, rotation_speed=0):
         self.connect()
