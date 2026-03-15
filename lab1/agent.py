@@ -1,5 +1,5 @@
 import time
-from msg import parse_msg
+from msg import parse_msg, parse_all_msgs
 from flags import get_visible_flags, FLAGS
 from position import (
     position_from_three_flags,
@@ -65,6 +65,11 @@ class Agent:
     def _process_hear(self, parsed):
         p = parsed.get("p") or []
         # (hear Time Sender Message) -> p = [hear, time, sender, message]
+        raw = str(parsed.get("msg", ""))
+        if "play_on" in raw and "referee" in raw:
+            self.play_on = True
+            print(f"[{self.team_name}] Play on! Игрок может выполнять команды.")
+            return
         if len(p) < 4:
             return
         sender = p[2]
@@ -74,7 +79,7 @@ class Agent:
         if msg == "play_on" or "play_on" in msg:
             self.play_on = True
             print(f"[{self.team_name}] Play on! Игрок может выполнять команды.")
-        elif "kick_off" in msg or msg.startswith("goal_"):
+        elif "kick_off" in msg or str(msg).startswith("goal_"):
             self.play_on = False
 
     def _process_see(self, parsed):
@@ -110,20 +115,21 @@ class Agent:
 
     def on_message(self, data):
         text = data.decode("utf-8") if isinstance(data, bytes) else data
-        parsed = parse_msg(text)
-        if not parsed:
-            return
-        cmd = parsed.get("cmd")
-        if cmd == "hear":
-            self._process_hear(parsed)
-        elif cmd == "init":
-            self._process_init(parsed)
-        elif cmd == "see":
-            self._process_see(parsed)
-        self._send_command()
+        for parsed in parse_all_msgs(text):
+            if not parsed:
+                continue
+            cmd = parsed.get("cmd")
+            if cmd == "hear":
+                self._process_hear(parsed)
+            elif cmd == "init":
+                self._process_init(parsed)
+            elif cmd == "see":
+                self._process_see(parsed)
+            self._send_command()
 
     def _send_command(self):
-        if self.play_on and self.rotation_speed != 0:
+        # Вращение: сервер принимает turn только после Kick off (play_on)
+        if self.rotation_speed != 0 and self.play_on:
             self.turn(self.rotation_speed)
 
     def run(self, start_pos, rotation_speed=0):
@@ -132,6 +138,7 @@ class Agent:
         self.rotation_speed = rotation_speed
         self.running = True
         print(f"Команда: {self.team_name}, позиция: {start_pos}, вращение: {rotation_speed}")
+        print(">>> В мониторе нажмите KICK OFF — тогда игроки начнут двигаться!")
 
         while self.running:
             data = self.socket.receive()
