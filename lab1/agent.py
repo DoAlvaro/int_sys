@@ -16,7 +16,7 @@ class InitError(Exception):
 
 
 class Agent:
-    def __init__(self, team_name, version=15, is_goalie=False, host="127.0.0.1", port=6000):
+    def __init__(self, team_name, version=19, is_goalie=False, host="127.0.0.1", port=6000):
         self.team_name = team_name
         self.version = version
         self.is_goalie = is_goalie
@@ -26,6 +26,7 @@ class Agent:
         self.rotation_speed = 0.0
         self.x = None
         self.y = None
+        self._see_count = 0
 
     def connect(self):
         goalie_str = " (goalie)" if self.is_goalie else ""
@@ -83,6 +84,11 @@ class Agent:
             self.play_on = False
 
     def _process_see(self, parsed):
+        self._see_count += 1
+        # Если hear с play_on так и не пришёл — через ~4 сек считаем, что игра идёт
+        if self._see_count == 50 and not self.play_on:
+            self.play_on = True
+            print(f"[{self.team_name}] Play on (авто). Крутимся.")
         flags_list = get_visible_flags(parsed)
         pos = position_from_three_flags(flags_list)
         if pos is None:
@@ -125,12 +131,9 @@ class Agent:
                 self._process_init(parsed)
             elif cmd == "see":
                 self._process_see(parsed)
-            self._send_command()
-
-    def _send_command(self):
-        # Вращение: сервер принимает turn только после Kick off (play_on)
-        if self.rotation_speed != 0 and self.play_on:
-            self.turn(self.rotation_speed)
+                # Один turn за цикл, только когда игра идёт (или после авто-play_on)
+                if self.rotation_speed != 0 and self.play_on:
+                    self.turn(self.rotation_speed)
 
     def run(self, start_pos, rotation_speed=0):
         self.connect()
