@@ -1,6 +1,7 @@
 #!/bin/bash
 # Установка rcssserver + rcssmonitor на Linux по методичке (СтудИзба, раздел 1).
-# Проверено на Ubuntu 20.04/22.04. Запуск: ./install_rcssserver_linux.sh
+# Ubuntu 20.04–24.04: при отсутствии Qt4 монитор собирается через CMake + Qt5.
+# Запуск: ./install_rcssserver_linux.sh
 
 set -e
 BUILD_DIR="${BUILD_DIR:-$HOME/rcss_build}"
@@ -14,15 +15,23 @@ if command -v apt-get &>/dev/null; then
     git curl
   # libfreetype: в новых дистрибутивах может быть libfreetype-dev вместо libfreetype6-dev
   sudo apt-get install -y libfreetype6-dev 2>/dev/null || sudo apt-get install -y libfreetype-dev
-  # Монитор по методичке — нужен Qt4. В Ubuntu 22+ его нет в репозиториях, подключаем PPA.
-  if apt-cache show libqt4-dev &>/dev/null; then
-    sudo apt-get install -y libqt4-dev libaudio-dev qt4-dev-tools
+  # Монитор: пробуем Qt4 (как в методичке); если нет — Qt5 + CMake (Ubuntu 24.04 и т.п.).
+  USE_QT5_MONITOR=0
+  if apt-cache show libqt4-dev &>/dev/null && sudo apt-get install -y libqt4-dev libaudio-dev qt4-dev-tools; then
+    USE_QT5_MONITOR=0
   else
-    echo "  Qt4 в репозиториях нет. Подключаем PPA для Qt4 (как в методичке)..."
+    set +e
     sudo apt-get install -y software-properties-common
-    sudo add-apt-repository -y ppa:ubuntuhandbook1/ppa
+    sudo add-apt-repository -y ppa:ubuntuhandbook1/ppa 2>/dev/null
     sudo apt-get update
-    sudo apt-get install -y libqt4-dev libqtcore4 libqtgui4 qt4-dev-tools libaudio-dev
+    if sudo apt-get install -y libqt4-dev libqtcore4 libqtgui4 qt4-dev-tools libaudio-dev 2>/dev/null; then
+      USE_QT5_MONITOR=0
+    else
+      echo "  Собираем монитор с Qt5 (CMake)..."
+      sudo apt-get install -y qtbase5-dev libqt5opengl5-dev cmake
+      USE_QT5_MONITOR=1
+    fi
+    set -e
   fi
 else
   echo "Нужен apt-get (Debian/Ubuntu). Для Fedora: dnf install gcc-c++ automake boost-devel flex bison."
@@ -83,13 +92,23 @@ fi
 sudo ldconfig 2>/dev/null || true
 
 echo ""
-echo "=== 5. Сборка монитора (методичка: bootstrap, configure, make, make install) ==="
+echo "=== 5. Сборка монитора ==="
 cd "$BUILD_DIR/rcssmonitor"
-make distclean 2>/dev/null || true
-./bootstrap
-./configure CXX="$CXX" CXXFLAGS="$CXXFLAGS"
-make -j$(nproc)
-sudo make install
+if [[ "${USE_QT5_MONITOR:-0}" -eq 1 ]]; then
+  echo "  Сборка через CMake + Qt5..."
+  rm -rf build
+  mkdir -p build && cd build
+  cmake .. -DCMAKE_CXX_COMPILER="$CXX" -DCMAKE_CXX_FLAGS="$CXXFLAGS"
+  make -j$(nproc)
+  sudo make install
+else
+  echo "  Сборка через autotools + Qt4 (методичка)..."
+  make distclean 2>/dev/null || true
+  ./bootstrap
+  ./configure CXX="$CXX" CXXFLAGS="$CXXFLAGS"
+  make -j$(nproc)
+  sudo make install
+fi
 
 echo ""
 echo "=== Готово. Порядок запуска по методичке: ==="
