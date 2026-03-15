@@ -64,14 +64,18 @@ class Agent:
 
     def _process_hear(self, parsed):
         p = parsed.get("p") or []
-        if len(p) >= 3 and p[2] == "referee":
-            msg = p[3] if len(p) > 3 else ""
-            if msg == "play_on":
-                self.play_on = True
-            elif str(msg).startswith("kick_off"):
-                self.play_on = False
-            elif str(msg).startswith("goal_"):
-                self.play_on = False
+        # (hear Time Sender Message) -> p = [hear, time, sender, message]
+        if len(p) < 4:
+            return
+        sender = p[2]
+        msg = str(p[3]) if len(p) > 3 else ""
+        if sender != "referee":
+            return
+        if msg == "play_on" or "play_on" in msg:
+            self.play_on = True
+            print(f"[{self.team_name}] Play on! Игрок может выполнять команды.")
+        elif "kick_off" in msg or msg.startswith("goal_"):
+            self.play_on = False
 
     def _process_see(self, parsed):
         flags_list = get_visible_flags(parsed)

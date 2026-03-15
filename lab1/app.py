@@ -2,11 +2,24 @@
 Запуск: python3 app.py [--team NAME] [--x X] [--y Y] [--rotation R]
 """
 import argparse
+import signal
 import sys
 from agent import Agent, InitError
 
+_agent = None
+
+
+def _on_terminate(*_):
+    """При SIGTERM (kill из start.sh) отправляем (bye) и выходим."""
+    if _agent:
+        _agent.stop()
+    sys.exit(0)
+
 
 def main():
+    global _agent
+    signal.signal(signal.SIGTERM, _on_terminate)
+
     parser = argparse.ArgumentParser(description="Лаб. 1: позиционирование игрока")
     parser.add_argument("--team", default="teamA", help="Имя команды")
     parser.add_argument("--x", type=float, default=-15, help="Начальная координата x")
@@ -17,7 +30,8 @@ def main():
     parser.add_argument("--port", type=int, default=6000, help="Порт rcssserver (по умолчанию 6000)")
     args = parser.parse_args()
 
-    agent = Agent(team_name=args.team, is_goalie=args.goalie, host=args.host, port=args.port)
+    _agent = Agent(team_name=args.team, is_goalie=args.goalie, host=args.host, port=args.port)
+    agent = _agent
     try:
         agent.run(start_pos=(args.x, args.y), rotation_speed=args.rotation)
     except KeyboardInterrupt:
