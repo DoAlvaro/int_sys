@@ -4,7 +4,9 @@ from flags import get_visible_flags, FLAGS
 from config import (
     FIELD_WIDTH,
     FIELD_HEIGHT,
-    FIELD_MARGIN,
+    FIELD_MARGIN_X,
+    FIELD_MARGIN_Y,
+    EDGE_HALF_H,
     MOVE_X_MIN,
     MOVE_X_MAX,
     MOVE_Y_MIN,
@@ -146,11 +148,14 @@ class Agent:
                 self._process_see(parsed)
                 if not self.play_on:
                     continue
-                # У края поля — разворачиваемся
-                half_w, half_h = FIELD_WIDTH / 2, FIELD_HEIGHT / 2
+                # У края поля — разворачиваемся (Y часто строже в симуляторе — используем EDGE_HALF_H)
+                half_w = FIELD_WIDTH / 2
                 at_edge = (
                     self.x is not None and self.y is not None
-                    and (abs(self.x) > half_w - FIELD_MARGIN or abs(self.y) > half_h - FIELD_MARGIN)
+                    and (
+                        abs(self.x) > half_w - FIELD_MARGIN_X
+                        or abs(self.y) > EDGE_HALF_H - FIELD_MARGIN_Y
+                    )
                 )
                 if at_edge:
                     self.turn(180)
