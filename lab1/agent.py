@@ -38,6 +38,9 @@ class Agent:
         self.x = None
         self.y = None
         self._see_count = 0
+        # У границы: сначала разворот, потом отбегание, чтобы не залипать
+        self._turning_back = 0
+        self._dashing_away = 0
 
     def connect(self):
         goalie_str = " (goalie)" if self.is_goalie else ""
@@ -160,11 +163,25 @@ class Agent:
                     )
                 )
                 if at_edge:
-                    self.turn(180)
-                elif self.rotation_speed != 0 and self._see_count % 2 == 0:
-                    self.turn(self.rotation_speed)
+                    if self._turning_back > 0:
+                        self.turn(45)
+                        self._turning_back -= 1
+                        if self._turning_back == 0:
+                            self._dashing_away = 6   # после разворота — отбежать от границы
+                    elif self._dashing_away > 0:
+                        self.dash(60)
+                        self._dashing_away -= 1
+                    else:
+                        self._turning_back = 4
+                        self.turn(45)
+                        self._turning_back -= 1
                 else:
-                    self.dash(60)
+                    self._turning_back = 0
+                    self._dashing_away = 0
+                    if self.rotation_speed != 0 and self._see_count % 2 == 0:
+                        self.turn(self.rotation_speed)
+                    else:
+                        self.dash(60)
 
     def run(self, start_pos, rotation_speed=0):
         self.connect()
