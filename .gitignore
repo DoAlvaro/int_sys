@@ -1,0 +1,20 @@
+# Сборки и кэш
+build_deps/
+rcss_build/
+*.pyc
+__pycache__/
+*.egg-info/
+.eggs/
+
+# Окружение и IDE
+.venv/
+venv/
+.env
+.idea/
+.vscode/
+*.swp
+*~
+
+# Логи и временные файлы
+*.log
+.DS_Store
