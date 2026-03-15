@@ -5,13 +5,22 @@
 set -e
 BUILD_DIR="${BUILD_DIR:-$HOME/rcss_build}"
 
-echo "=== 1. Зависимости (методичка: build-essential, automake, libboost-all-dev, flex, bison) ==="
+echo "=== 1. Зависимости (сервер + монитор) ==="
 if command -v apt-get &>/dev/null; then
   sudo apt-get update
+  # Базовые зависимости для rcssserver (обязательно)
   sudo apt-get install -y build-essential automake libboost-all-dev flex bison \
-    libqt4-dev libaudio-dev libxt-dev libxi-dev libxrender-dev \
-    libfreetype6-dev libfontconfig1-dev \
+    libxt-dev libxi-dev libxrender-dev libfontconfig1-dev \
     git curl
+  # libfreetype: в новых дистрибутивах может быть libfreetype-dev вместо libfreetype6-dev
+  sudo apt-get install -y libfreetype6-dev 2>/dev/null || sudo apt-get install -y libfreetype-dev
+  # Монитор: Qt4 на Ubuntu 22+ нет — ставим Qt5 (rcssmonitor поддерживает)
+  if apt-cache show libqt4-dev &>/dev/null; then
+    sudo apt-get install -y libqt4-dev libaudio-dev
+  else
+    echo "  Qt4 не найден, ставим Qt5 для rcssmonitor..."
+    sudo apt-get install -y qtbase5-dev libqt5opengl5-dev
+  fi
 else
   echo "Нужен apt-get (Debian/Ubuntu). Для Fedora: dnf install gcc-c++ automake boost-devel flex bison."
   exit 1
