@@ -2,6 +2,20 @@
 # noqa: D100
 
 
+def _dash_power_to_ball(ctx) -> int:
+    """Меньше мощность при приближении к мячу, чтобы не откидывать его."""
+    d = ctx.distance_to("b")
+    if d < 1.2:
+        return 25
+    if d < 2.0:
+        return 40
+    if d < 3.5:
+        return 55
+    if d < 5.0:
+        return 70
+    return 85
+
+
 def build_passer_tree() -> dict:
     tree = {
         "state": {"status": "init", "command": None},
@@ -87,7 +101,7 @@ def build_passer_tree() -> dict:
             "next": "sendCommand",
         },
         "dashToBall": {
-            "exec": lambda ctx, st: st.__setitem__("command", ("dash", "100")),
+            "exec": lambda ctx, st: st.__setitem__("command", ("dash", str(_dash_power_to_ball(ctx)))),
             "next": "sendCommand",
         },
         "startPassing": {
