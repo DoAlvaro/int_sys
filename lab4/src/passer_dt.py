@@ -35,13 +35,15 @@ def _root_exec(mgr, state):
 
 
 def _pass_exec(mgr, state):
-    """Как у друга: сильный удар в сторону напарника (угол и дистанция из see)."""
+    """Пас в сторону напарника; сила чуть слабее, чтобы мяч не пролетал мимо."""
     teammate = mgr.getClosestTeammate()
     if teammate:
         key, obj = teammate
         angle = obj.get("dir", 0)
         dist = obj.get("dist", 0)
-        state["command"] = ("kick", f"{int(dist * 3 + 30)} {int(angle)}")
+        # Мягче: dist*2 + 22, макс 70 — мяч не улетает за напарника
+        power = min(70, max(35, int(dist * 2 + 22)))
+        state["command"] = ("kick", f"{power} {int(angle)}")
         state["status"] = "wait_goal"
         state["say"] = "go"
     else:
