@@ -35,21 +35,26 @@ def _root_exec(mgr, state):
 
 
 def _dash_to_ball(mgr, state):
-    """К мячу быстрее: ближе 1.5 м — 70, иначе 85 (меньше лагов)."""
+    """К мячу без отброса: близко — тихий dash, иначе средний (не врезаться в мяч)."""
     d = mgr.getDistance("b")
-    power = 70 if d < 1.5 else 85
+    if d < 1.2:
+        power = 50
+    elif d < 2.5:
+        power = 65
+    else:
+        power = 78
     state["command"] = ("dash", str(power))
 
 
 def _pass_exec(mgr, state):
-    """Пас как у друга по углу; сила по дистанции, стабильная формула."""
+    """Пас: угол из see, сила как у друга dist*3+30 (точнее долетает)."""
     teammate = mgr.getClosestTeammate()
     if teammate:
         key, obj = teammate
         angle = obj.get("dir", 0)
         dist = obj.get("dist", 0)
-        # Формула как у друга (dist*3+30), но макс 72 — чтобы не перелёт
-        power = min(72, max(40, int(dist * 2.5 + 28)))
+        # Точно как у друга — лучше точность; ограничиваем 32–78
+        power = min(78, max(32, int(dist * 3 + 30)))
         state["command"] = ("kick", f"{power} {int(angle)}")
         state["status"] = "wait_goal"
         state["say"] = "go"
