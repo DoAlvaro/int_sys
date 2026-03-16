@@ -18,7 +18,7 @@ def create_passer_tree():
         "searchBall": {"exec": lambda mgr, state: state.__setitem__("command", ("turn", "60")), "next": "sendCommand"},
         "approachBall": {"condition": lambda mgr, state: abs(mgr.getAngle("b")) > 5, "trueCond": "turnToBall", "falseCond": "dashToBall"},
         "turnToBall": {"exec": lambda mgr, state: state.__setitem__("command", ("turn", str(int(mgr.getAngle("b"))))), "next": "sendCommand"},
-        "dashToBall": {"exec": lambda mgr, state: state.__setitem__("command", ("dash", "100")), "next": "sendCommand"},
+        "dashToBall": {"exec": lambda mgr, state: _dash_to_ball(mgr, state), "next": "sendCommand"},
         "startPassing": {"exec": lambda mgr, state: state.__setitem__("status", "passing"), "next": "checkPassing"},
         "checkPassing": {"condition": lambda mgr, state: state["status"] == "passing", "trueCond": "findScorer", "falseCond": "waitGoal"},
         "findScorer": {"condition": lambda mgr, state: mgr.getTeammateCount() > 0, "trueCond": "passToScorer", "falseCond": "rotateWithBall"},
@@ -32,6 +32,13 @@ def create_passer_tree():
 
 def _root_exec(mgr, state):
     state["command"] = None
+
+
+def _dash_to_ball(mgr, state):
+    """К мячу — не врезаться: ближе 2 м тише (60), иначе 75."""
+    d = mgr.getDistance("b")
+    power = 60 if d < 2.0 else 75
+    state["command"] = ("dash", str(power))
 
 
 def _pass_exec(mgr, state):
