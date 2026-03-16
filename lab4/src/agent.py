@@ -87,7 +87,7 @@ class Agent:
                     self.controller.reset()
                     self.move(*self.start_pos)
         else:
-            self.last_heard_msg = str(message)
+            self.last_heard_msg = str(message).strip('"')
 
     def _process_see(self, parsed: dict):
         self.visible_objects = get_visible_objects_from_see(parsed)
