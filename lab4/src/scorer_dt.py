@@ -32,17 +32,17 @@ def create_scorer_tree():
         "backToChaseBall": {"exec": lambda mgr, state: state.__setitem__("status", "score"), "next": "goToBallScore"},
         "closeEnoughToKick": {"condition": lambda mgr, state: mgr.getDistance(mgr.getGoalFlag()) < 20 and mgr.getVisible(mgr.getGoalFlag()), "trueCond": "kickToGoal", "falseCond": "dribbleToGoal"},
         "dribbleToGoal": {"condition": lambda mgr, state: mgr.getVisible(mgr.getGoalFlag()), "trueCond": "approachGoalDribble", "falseCond": "dashForward"},
-        "dashForward": {"exec": lambda mgr, state: state.__setitem__("command", ("dash", "85")), "next": "sendCommand"},
-        "approachGoalDribble": {"condition": lambda mgr, state: abs(mgr.getAngle(mgr.getGoalFlag())) > 10, "trueCond": "turnToGoalDribble", "falseCond": "dashWithBall"},
+        "dashForward": {"exec": lambda mgr, state: state.__setitem__("command", ("dash", "90")), "next": "sendCommand"},
+        "approachGoalDribble": {"condition": lambda mgr, state: abs(mgr.getAngle(mgr.getGoalFlag())) > 40, "trueCond": "turnToGoalDribble", "falseCond": "dashWithBall"},
         "turnToGoalDribble": {"exec": lambda mgr, state: _turn_to_goal(mgr, state), "next": "sendCommand"},
-        "dashWithBall": {"exec": lambda mgr, state: state.__setitem__("command", ("dash", "85")), "next": "sendCommand"},
+        "dashWithBall": {"exec": lambda mgr, state: state.__setitem__("command", ("dash", "90")), "next": "sendCommand"},
         "goToBallScore": {"condition": lambda mgr, state: mgr.getVisible("b"), "trueCond": "approachBallScore", "falseCond": "searchBallScore"},
         "searchBallScore": {"exec": lambda mgr, state: state.__setitem__("command", ("turn", "45")), "next": "sendCommand"},
         "approachBallScore": {"condition": lambda mgr, state: abs(mgr.getAngle("b")) > 5, "trueCond": "turnToBallScore", "falseCond": "dashToBallScore"},
         "turnToBallScore": {"exec": lambda mgr, state: state.__setitem__("command", ("turn", str(int(mgr.getAngle("b"))))), "next": "sendCommand"},
         "dashToBallScore": {"exec": lambda mgr, state: state.__setitem__("command", ("dash", "100")), "next": "sendCommand"},
         "kickToGoal": {"condition": lambda mgr, state: mgr.getVisible(mgr.getGoalFlag()), "trueCond": "goalVisibleScore", "falseCond": "dribbleToGoal"},
-        "goalVisibleScore": {"exec": lambda mgr, state: state.__setitem__("command", ("kick", f"100 {int(mgr.getAngle(mgr.getGoalFlag()))}")), "next": "sendCommand"},
+        "goalVisibleScore": {"exec": lambda mgr, state: _do_kick_and_done(mgr, state), "next": "sendCommand"},
         "waitGoalScorer": {"exec": lambda mgr, state: state.__setitem__("command", ("turn", "10")), "next": "sendCommand"},
         "sendCommand": {"command": lambda mgr, state: state["command"]},
     }
@@ -58,3 +58,9 @@ def _turn_to_goal(mgr, state):
     a = mgr.getAngle(mgr.getGoalFlag())
     turn = max(15, min(45, abs(a))) * (1 if a >= 0 else -1)
     state["command"] = ("turn", str(int(turn)))
+
+
+def _do_kick_and_done(mgr, state):
+    """Один удар по воротам и переход в wait_goal — больше не бьём каждый цикл."""
+    state["command"] = ("kick", f"100 {int(mgr.getAngle(mgr.getGoalFlag()))}")
+    state["status"] = "wait_goal"
