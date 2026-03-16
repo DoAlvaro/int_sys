@@ -11,12 +11,12 @@ SCORE_PID=$!
 # Start Goalie Defender для teamB (вратарь у нижней штанги)
 # Согласно заданию 4.2: защитники стоят у ворот для предотвращения offside
 # Вратари могут использовать move во время игры
-python3 src/main_defender.py --team teamB --x -48 --y -5 &
+python3 src/static_defender.py --team teamB --x -48 --y -5 &
 GOALIE_PID=$!
 
 # Start Static Defender для teamB (обычный игрок у верхней штанги)
 # Использует dash 0 для удержания позиции
-python3 src/main_defender.py --team teamB --x -48 --y 5 &
+python3 src/static_defender.py --team teamB --x -48 --y 5 &
 DEFENDER_PID=$!
 
 echo "Agents started. Press Ctrl+C to stop."
