@@ -2,7 +2,7 @@ import time
 from socket_client import SocketClient
 from msg import parse_msg
 from flags import FLAGS, get_visible_objects_from_see, get_visible_flags
-from position import position_from_three_flags
+from position import position_from_three_flags, body_angle_from_flag
 from controller import Controller
 
 
@@ -23,6 +23,7 @@ class Agent:
         self.running = False
         self.x = None
         self.y = None
+        self.body_angle_rad = None  # для расчёта паса «на ход»
         self.visible_objects = {}
         self.controller = controller
         self.start_pos = (-15, 0)
@@ -101,6 +102,7 @@ class Agent:
             player_number=self.player_number or 0,
             x=self.x,
             y=self.y,
+            body_angle_rad=self.body_angle_rad,
             last_heard_msg=self.last_heard_msg,
         )
         if decision:
@@ -120,6 +122,12 @@ class Agent:
         pos = position_from_three_flags(flags_list)
         if pos:
             self.x, self.y = pos
+            # Угол тела для расчёта паса (глобальные направления)
+            f1 = flags_list[0]
+            fx, fy = FLAGS[f1["key"]]
+            self.body_angle_rad = body_angle_from_flag(
+                self.x, self.y, fx, fy, f1["dist"], f1["angle"]
+            )
 
     def run(self, start_pos: tuple):
         self.start_pos = start_pos

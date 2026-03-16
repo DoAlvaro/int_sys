@@ -8,6 +8,13 @@ def _to_rad(deg):
     return deg * math.pi / 180.0
 
 
+def body_angle_from_flag(my_x, my_y, flag_x, flag_y, see_dist, see_angle_deg):
+    """Угол тела игрока (радианы) по позиции и наблюдению одного флага."""
+    world_angle = math.atan2(flag_y - my_y, flag_x - my_x)
+    see_rad = _to_rad(see_angle_deg)
+    return world_angle - see_rad
+
+
 def in_field(x, y):
     return FIELD_X_MIN <= x <= FIELD_X_MAX and FIELD_Y_MIN <= y <= FIELD_Y_MAX
 

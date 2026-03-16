@@ -1,3 +1,6 @@
+import math
+
+
 def create_passer_tree():
     tree = {
         "state": {"status": "init", "command": None},
@@ -35,16 +38,42 @@ def _root_exec(mgr, state):
 
 
 def _pass_exec(mgr, state):
+    """
+    Пас «на ход»: считаем глобальные координаты напарника, точку встречи (между нами и им),
+    бьём в эту точку — мяч и игрок 2 должны пересечься.
+    """
     teammate = mgr.getClosestTeammate()
-    if teammate:
-        key, obj = teammate
-        angle = obj.get("dir", 0)
-        dist = obj.get("dist", 0)
-        # Пас «на ход»: мяч летит не до ног напарника, а короче — чтобы игрок 2 мог подбежать
-        # Сила ~60–70% от дистанции: мяч приземляется между пасующим и забивающим
-        power = min(55, max(35, int(dist * 0.9 + 18)))
-        state["command"] = ("kick", f"{power} {int(angle)}")
+    if not teammate:
+        state["command"] = ("kick", "10 45")
+        return
+    key, obj = teammate
+    angle_deg = obj.get("dir", 0)
+    dist_teammate = obj.get("dist", 0)
+    px, py = mgr.x, mgr.y
+    if px is None or py is None:
+        state["command"] = ("kick", f"{min(70, int(dist_teammate * 1.5 + 25))} {int(angle_deg)}")
         state["status"] = "wait_goal"
         state["say"] = "go"
-    else:
-        state["command"] = ("kick", "10 45")
+        return
+    body = mgr.body_angle_rad if mgr.body_angle_rad is not None else 0
+    angle_rad = math.radians(angle_deg)
+    # Глобальная позиция напарника
+    tx = px + dist_teammate * math.cos(body + angle_rad)
+    ty = py + dist_teammate * math.sin(body + angle_rad)
+    # Точка встречи: между пасующим и напарником (55% пути), чтобы мяч приземлился «на ход»
+    k_meet = 0.55
+    mx = px + k_meet * (tx - px)
+    my = py + k_meet * (ty - py)
+    d_meet = math.hypot(mx - px, my - py)
+    # Угол удара в глобальных координатах, затем относительно тела
+    kick_angle_global = math.atan2(my - py, mx - px)
+    kick_angle_body_deg = math.degrees(kick_angle_global - body)
+    # Нормализуем в [-180, 180]
+    while kick_angle_body_deg > 180:
+        kick_angle_body_deg -= 360
+    while kick_angle_body_deg < -180:
+        kick_angle_body_deg += 360
+    power = min(90, max(35, int(d_meet * 2.1 + 15)))
+    state["command"] = ("kick", f"{power} {int(kick_angle_body_deg)}")
+    state["status"] = "wait_goal"
+    state["say"] = "go"

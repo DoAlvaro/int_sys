@@ -1,3 +1,6 @@
+import math
+
+
 class DTManager:
     """Интерфейс для рутинных задач дерева решений."""
     def __init__(self):
@@ -7,6 +10,7 @@ class DTManager:
         self.player_number = 0
         self.x = None
         self.y = None
+        self.body_angle_rad = None
         self.last_heard_msg = None
 
     def update(
@@ -17,6 +21,7 @@ class DTManager:
         player_number: int = 0,
         x=None,
         y=None,
+        body_angle_rad=None,
         last_heard_msg=None,
     ):
         self.visible = visible_objects
@@ -25,6 +30,7 @@ class DTManager:
         self.player_number = player_number
         self.x = x
         self.y = y
+        self.body_angle_rad = body_angle_rad
         self.last_heard_msg = last_heard_msg
 
     def getGoalFlag(self) -> str:
