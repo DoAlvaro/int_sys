@@ -2,7 +2,7 @@ import time
 from socket_client import SocketClient
 from msg import parse_msg
 from flags import FLAGS, get_visible_objects_from_see, get_visible_flags
-from position import position_from_three_flags, body_angle_from_flag
+from position import position_from_three_flags
 from controller import Controller
 
 
@@ -11,7 +11,7 @@ class InitError(Exception):
 
 
 class Agent:
-    def __init__(self, team_name, controller: Controller, version=19, is_goalie=False):
+    def __init__(self, team_name, controller: Controller, version=7, is_goalie=False):
         self.team = team_name
         self.version = version
         self.is_goalie = is_goalie
@@ -23,7 +23,6 @@ class Agent:
         self.running = False
         self.x = None
         self.y = None
-        self.body_angle_rad = None  # для расчёта паса «на ход»
         self.visible_objects = {}
         self.controller = controller
         self.start_pos = (-15, 0)
@@ -32,7 +31,7 @@ class Agent:
     def connect(self):
         goalie_str = " (goalie)" if self.is_goalie else ""
         self.socket.send(f"(init {self.team} (version {self.version}){goalie_str})")
-        deadline = time.time() + 15
+        deadline = time.time() + 5
         while time.time() < deadline:
             data = self.socket.receive()
             if data and self._process_init_msg(data):
@@ -102,7 +101,6 @@ class Agent:
             player_number=self.player_number or 0,
             x=self.x,
             y=self.y,
-            body_angle_rad=self.body_angle_rad,
             last_heard_msg=self.last_heard_msg,
         )
         if decision:
@@ -122,12 +120,6 @@ class Agent:
         pos = position_from_three_flags(flags_list)
         if pos:
             self.x, self.y = pos
-            # Угол тела для расчёта паса (глобальные направления)
-            f1 = flags_list[0]
-            fx, fy = FLAGS[f1["key"]]
-            self.body_angle_rad = body_angle_from_flag(
-                self.x, self.y, fx, fy, f1["dist"], f1["angle"]
-            )
 
     def run(self, start_pos: tuple):
         self.start_pos = start_pos

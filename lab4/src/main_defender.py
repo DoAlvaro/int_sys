@@ -8,7 +8,7 @@ from msg import parse_msg
 class StaticDefender:
     """Статичный защитник: занимает позицию, при play_on держится dash 0."""
 
-    def __init__(self, team_name, pos_x, pos_y, version=19):
+    def __init__(self, team_name, pos_x, pos_y, version=7):
         self.team = team_name
         self.version = version
         self.pos_x = pos_x

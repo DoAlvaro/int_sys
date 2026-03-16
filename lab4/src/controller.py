@@ -37,13 +37,12 @@ class Controller:
         player_number: int = 0,
         x=None,
         y=None,
-        body_angle_rad=None,
         last_heard_msg=None,
     ) -> tuple:
         if not game_on:
             return None
         self.manager.update(
-            visible_objects, team, side, player_number, x, y, body_angle_rad, last_heard_msg
+            visible_objects, team, side, player_number, x, y, last_heard_msg
         )
         result = self.dt.execute(self.manager)
         if result and isinstance(result, tuple) and len(result) == 2:
