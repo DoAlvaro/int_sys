@@ -40,8 +40,9 @@ def _pass_exec(mgr, state):
         key, obj = teammate
         angle = obj.get("dir", 0)
         dist = obj.get("dist", 0)
-        # Умеренная сила: мяч долетит до напарника, не улетит далеко мимо
-        power = min(80, max(40, int(dist * 1.8 + 25)))
+        # Пас «на ход»: мяч летит не до ног напарника, а короче — чтобы игрок 2 мог подбежать
+        # Сила ~60–70% от дистанции: мяч приземляется между пасующим и забивающим
+        power = min(55, max(35, int(dist * 0.9 + 18)))
         state["command"] = ("kick", f"{power} {int(angle)}")
         state["status"] = "wait_goal"
         state["say"] = "go"
