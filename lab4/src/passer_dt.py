@@ -13,10 +13,10 @@ def create_passer_tree():
         "dashToFplc": {"exec": lambda mgr, state: state.__setitem__("command", ("dash", "80")), "next": "sendCommand"},
         "startMoveToBall": {"exec": lambda mgr, state: state.__setitem__("status", "move_to_ball"), "next": "checkMoveToBall"},
         "checkMoveToBall": {"condition": lambda mgr, state: state["status"] == "move_to_ball", "trueCond": "atBall", "falseCond": "checkPassing"},
-        "atBall": {"condition": lambda mgr, state: mgr.getDistance("b") < 0.7, "trueCond": "startPassing", "falseCond": "goToBall"},
+        "atBall": {"condition": lambda mgr, state: mgr.getDistance("b") < 0.85, "trueCond": "startPassing", "falseCond": "goToBall"},
         "goToBall": {"condition": lambda mgr, state: mgr.getVisible("b"), "trueCond": "approachBall", "falseCond": "searchBall"},
         "searchBall": {"exec": lambda mgr, state: state.__setitem__("command", ("turn", "60")), "next": "sendCommand"},
-        "approachBall": {"condition": lambda mgr, state: abs(mgr.getAngle("b")) > 5, "trueCond": "turnToBall", "falseCond": "dashToBall"},
+        "approachBall": {"condition": lambda mgr, state: abs(mgr.getAngle("b")) > 4, "trueCond": "turnToBall", "falseCond": "dashToBall"},
         "turnToBall": {"exec": lambda mgr, state: state.__setitem__("command", ("turn", str(int(mgr.getAngle("b"))))), "next": "sendCommand"},
         "dashToBall": {"exec": lambda mgr, state: _dash_to_ball(mgr, state), "next": "sendCommand"},
         "startPassing": {"exec": lambda mgr, state: state.__setitem__("status", "passing"), "next": "checkPassing"},
@@ -35,21 +35,21 @@ def _root_exec(mgr, state):
 
 
 def _dash_to_ball(mgr, state):
-    """К мячу — не врезаться: ближе 2 м тише (60), иначе 75."""
+    """К мячу быстрее: ближе 1.5 м — 70, иначе 85 (меньше лагов)."""
     d = mgr.getDistance("b")
-    power = 60 if d < 2.0 else 75
+    power = 70 if d < 1.5 else 85
     state["command"] = ("dash", str(power))
 
 
 def _pass_exec(mgr, state):
-    """Пас в сторону напарника; сила чуть слабее, чтобы мяч не пролетал мимо."""
+    """Пас как у друга по углу; сила по дистанции, стабильная формула."""
     teammate = mgr.getClosestTeammate()
     if teammate:
         key, obj = teammate
         angle = obj.get("dir", 0)
         dist = obj.get("dist", 0)
-        # Мягче: dist*2 + 22, макс 70 — мяч не улетает за напарника
-        power = min(70, max(35, int(dist * 2 + 22)))
+        # Формула как у друга (dist*3+30), но макс 72 — чтобы не перелёт
+        power = min(72, max(40, int(dist * 2.5 + 28)))
         state["command"] = ("kick", f"{power} {int(angle)}")
         state["status"] = "wait_goal"
         state["say"] = "go"
