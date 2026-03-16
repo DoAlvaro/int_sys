@@ -36,7 +36,7 @@ def create_agent(team: str, role_key: str, side_hint: str = "l"):
     start_pos = config["start_pos"]
     is_goalie = role_key == "goalie"
     base_role = "goalie" if role_key == "goalie" else ("defender" if role_key.startswith("defender") else "forward")
-    low = LowLayer(team=team, side=side_hint, role=base_role)
+    low = LowLayer(squad=team, side=side_hint, role=base_role)
     mid = MidLayer(home_flag=home_flag, role=base_role, side=side_hint)
     if base_role == "goalie":
         high = HighLayerGoalie(side=side_hint)
